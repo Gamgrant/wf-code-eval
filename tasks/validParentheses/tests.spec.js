@@ -1,0 +1,40 @@
+const testCases = [
+  {
+    input: { s: "()" },
+    expected: true
+  },
+  {
+    input: { s: "()[]{}" },
+    expected: true
+  },
+  {
+    input: { s: "(]" },
+    expected: false
+  },
+  {
+    input: { s: "([)]" },
+    expected: false
+  },
+  {
+    input: { s: "{[]}" },
+    expected: true
+  },
+  {
+    input: { s: "" },
+    expected: true
+  },
+  {
+    input: { s: "(((" },
+    expected: false
+  },
+  {
+    input: { s: ")))" },
+    expected: false
+  },
+  {
+    input: { s: "({[]})" },
+    expected: true
+  }
+];
+
+module.exports = { testCases };
