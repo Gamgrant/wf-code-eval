@@ -1,0 +1,154 @@
+{
+  "tasks": [
+    {
+      "taskName": "fibonacci",
+      "winner": "gpt-1",
+      "snippetMetrics": [
+        {
+          "snippetId": "gpt-1",
+          "passRate": 1,
+          "lineCount": 15,
+          "hadRuntimeError": false,
+          "finalScore": 0.9066666666666667,
+          "diversityScore": 0.5333333333333333,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-0",
+          "passRate": 1,
+          "lineCount": 4,
+          "hadRuntimeError": false,
+          "finalScore": 0.8727272727272728,
+          "diversityScore": 0.36363636363636365,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-2",
+          "passRate": 1,
+          "lineCount": 13,
+          "hadRuntimeError": false,
+          "finalScore": 0.8727272727272728,
+          "diversityScore": 0.36363636363636365,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-3",
+          "passRate": 0.125,
+          "lineCount": 7,
+          "hadRuntimeError": false,
+          "finalScore": 0.19230769230769232,
+          "diversityScore": 0.46153846153846156,
+          "consistencyScore": 0
+        }
+      ],
+      "averagePassRate": 0.78125
+    },
+    {
+      "taskName": "twoSum",
+      "winner": "gpt-4",
+      "snippetMetrics": [
+        {
+          "snippetId": "gpt-4",
+          "passRate": 1,
+          "lineCount": 18,
+          "hadRuntimeError": false,
+          "finalScore": 0.8952380952380953,
+          "diversityScore": 0.47619047619047616,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-0",
+          "passRate": 1,
+          "lineCount": 11,
+          "hadRuntimeError": false,
+          "finalScore": 0.8857142857142858,
+          "diversityScore": 0.4285714285714286,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-2",
+          "passRate": 1,
+          "lineCount": 10,
+          "hadRuntimeError": false,
+          "finalScore": 0.8777777777777778,
+          "diversityScore": 0.38888888888888884,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-1",
+          "passRate": 1,
+          "lineCount": 10,
+          "hadRuntimeError": false,
+          "finalScore": 0.8666666666666667,
+          "diversityScore": 0.33333333333333337,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-3",
+          "passRate": 0.6,
+          "lineCount": 9,
+          "hadRuntimeError": false,
+          "finalScore": 0.5466666666666666,
+          "diversityScore": 0.33333333333333337,
+          "consistencyScore": 0
+        }
+      ],
+      "averagePassRate": 0.9199999999999999
+    },
+    {
+      "taskName": "validParentheses",
+      "winner": "gpt-3",
+      "snippetMetrics": [
+        {
+          "snippetId": "gpt-3",
+          "passRate": 1,
+          "lineCount": 22,
+          "hadRuntimeError": false,
+          "finalScore": 0.8896551724137931,
+          "diversityScore": 0.4482758620689655,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-1",
+          "passRate": 1,
+          "lineCount": 18,
+          "hadRuntimeError": false,
+          "finalScore": 0.8800000000000001,
+          "diversityScore": 0.4,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-0",
+          "passRate": 1,
+          "lineCount": 20,
+          "hadRuntimeError": false,
+          "finalScore": 0.8800000000000001,
+          "diversityScore": 0.4,
+          "consistencyScore": 0
+        },
+        {
+          "snippetId": "gpt-2",
+          "passRate": 0.7777777777777778,
+          "lineCount": 13,
+          "hadRuntimeError": false,
+          "finalScore": 0.7333333333333334,
+          "diversityScore": 0.5555555555555556,
+          "consistencyScore": 0
+        }
+      ],
+      "averagePassRate": 0.9444444444444444
+    }
+  ],
+  "global": {
+    "totalTasks": 3,
+    "totalSnippets": 13,
+    "meanPassAt1": 0.8818981481481482,
+    "averageDiversity": 0.42451915900191767,
+    "tasksWithFailures": [
+      "fibonacci",
+      "twoSum",
+      "validParentheses"
+    ],
+    "timestamp": "2025-09-03T02:47:42.110Z"
+  }
+}
