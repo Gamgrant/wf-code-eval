@@ -1,5 +1,5 @@
 import { SnippetResult } from '../runner/jsSandbox.js';
-import { DiversityMetrics, ConsistencyMetrics } from './scoring.js';
+import { DiversityMetrics, ConsistencyMetrics, computePassRate, computePerSnippetUniqueness} from './scoring.js';
 
 export interface SnippetMetrics {
   snippetId: string;
@@ -23,6 +23,35 @@ export const DEFAULT_WEIGHTS: RankingWeights = {
   consistency: 0.0
 };
 
+function clamp01(x: number): number {
+  return Math.max(0, Math.min(1, x));
+}
+
+function getId(r: SnippetResult): string {
+  const any = r as any;
+  return (
+    any.id ??
+    any.snippetId ??
+    any.name ??
+    'unknown'
+  );
+}
+
+function getHadRuntimeError(r: SnippetResult): boolean {
+  const any = r as any;
+  return Boolean(
+    any.runtimeErrors > 0 ||
+    any.totalRuntimeErrors > 0 ||
+    any.error === true ||
+    typeof any.error === 'string'
+  );
+}
+
+function countLines(src: string | undefined): number {
+  if (!src) return 0;
+  return src.replace(/\r\n/g, '\n').split('\n').length;
+}
+
 /**
  * TODO: Implement this function
  * 
@@ -43,9 +72,50 @@ export function rankSnippets(
   weights: RankingWeights = DEFAULT_WEIGHTS
 ): SnippetMetrics[] {
   // TODO: Implement ranking logic
-  throw new Error('rankSnippets not implemented');
-}
+  // throw new Error('rankSnippets not implemented');
+  const { passRate: wPass, diversity: wDiv, consistency: wCons = 0 } = weights;
+  const cohortConsistency = clamp01(consistencyMetrics?.agreementRate ?? 0);
+  const uniq = computePerSnippetUniqueness(codeSnippets);
 
+  const items: SnippetMetrics[] = snippetResults.map((res) => {
+    
+    const snippetId = getId(res);
+    const passRate = clamp01(computePassRate(res));
+
+    const diversityScore = clamp01(uniq.get(snippetId) ?? 0); 
+
+    const consistencyScore = wCons ? cohortConsistency : undefined;
+    
+    const src = codeSnippets.get(snippetId);
+    const lineCount = countLines(src);
+    const hadRuntimeError = getHadRuntimeError(res);
+
+    const finalScore =
+      wPass * passRate +
+      wDiv  * diversityScore +
+      (wCons ? wCons * (consistencyScore ?? 0) : 0);
+
+    return {
+      snippetId,
+      passRate,
+      diversityScore,
+      consistencyScore,
+      lineCount,
+      hadRuntimeError,
+      finalScore
+    };
+  });
+
+  items.sort((a, b) => {
+    if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
+    if (b.passRate !== a.passRate) return b.passRate - a.passRate;
+    if (a.hadRuntimeError !== b.hadRuntimeError) return (a.hadRuntimeError ? 1 : -1);
+    if (a.lineCount !== b.lineCount) return a.lineCount - b.lineCount;
+    return a.snippetId.localeCompare(b.snippetId);
+  });
+
+  return items;
+}
 /**
  * TODO: Implement this function
  * 
@@ -56,6 +126,8 @@ export function rankSnippets(
  */
 export function selectWinner(rankedSnippets: SnippetMetrics[]): string {
   // TODO: Implement
-  throw new Error('selectWinner not implemented');
+  if (!rankedSnippets || rankedSnippets.length === 0) return '';
+  return rankedSnippets[0].snippetId ?? '';
+  // throw new Error('selectWinner not implemented');
 }
 

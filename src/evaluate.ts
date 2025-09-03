@@ -11,6 +11,8 @@ import { rankSnippets, selectWinner } from './ranking.js';
 import { generateJsonReport, generateMarkdownReport, TaskReport, GlobalReport } from './report.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let diversitySum = 0;
+let diversityCount = 0;
 
 interface TaskConfig {
   name: string;
@@ -143,37 +145,46 @@ async function evaluate(tasksDir: string, candidatesDir: string, outputDir: stri
         }
       }
       // TODO: Call scoring functions here
-      // const diversity = computeDiversity(Array.from(codeSnippets.values()));
-      // const consistency = computeConsistency(results);
+      const diversity = computeDiversity(Array.from(codeSnippets.values()));
+      const consistency = computeConsistency(results);
       
       // TODO: Call ranking function here
-      // const rankedSnippets = rankSnippets(results, codeSnippets, diversity, consistency);
-      // const winner = selectWinner(rankedSnippets);
+      const rankedSnippets = rankSnippets(results, codeSnippets, diversity, consistency);
+      const winner = selectWinner(rankedSnippets);
       
       // For now, just pick the one with highest pass rate as a placeholder
-      const bestResult = results.reduce((best, current) => 
-        current.passRate > best.passRate ? current : best
-      );
+      // const bestResult = results.reduce((best, current) => 
+      //   current.passRate > best.passRate ? current : best
+      // );
       
       // Create task report (simplified for now)
       const taskReport: TaskReport = {
         taskName,
-        winner: bestResult.snippetId,
-        snippetMetrics: results.map(r => ({
+        winner,
+        snippetMetrics: rankedSnippets.map(r => ({
           snippetId: r.snippetId,
           passRate: r.passRate,
-          lineCount: codeSnippets.get(r.snippetId)?.split('\n').length || 0,
+          lineCount: r.lineCount,
           hadRuntimeError: r.hadRuntimeError,
-          finalScore: r.passRate // Placeholder
+          finalScore: r.finalScore,
+          diversityScore: r.diversityScore ?? 0,
+          consistencyScore: r.consistencyScore ?? 0
         })),
-        averagePassRate: results.reduce((sum, r) => sum + r.passRate, 0) / results.length
+        averagePassRate:
+          rankedSnippets.reduce((s, r) => s + r.passRate, 0) / rankedSnippets.length
       };
       
       taskReports.push(taskReport);
-      totalSnippetCount += results.length;
+      diversitySum += diversity.uniquenessScore;
+      diversityCount += 1;
+      totalSnippetCount += rankedSnippets.length;
       totalPassRateSum += taskReport.averagePassRate;
-      
-      console.log(`  🏆 Winner: ${bestResult.snippetId} (${(bestResult.passRate * 100).toFixed(1)}% pass rate)`);
+
+      console.log(
+        `  🏆 Winner: ${winner} (${(
+          (rankedSnippets.find(r => r.snippetId === winner)?.passRate ?? 0) * 100
+        ).toFixed(1)}% pass rate)`
+      );
       
     } catch (error) {
       console.error(`  ❌ Error evaluating task ${taskName}:`, error);
@@ -185,7 +196,7 @@ async function evaluate(tasksDir: string, candidatesDir: string, outputDir: stri
     totalTasks: taskReports.length,
     totalSnippets: totalSnippetCount,
     meanPassAt1: taskReports.length > 0 ? totalPassRateSum / taskReports.length : 0,
-    averageDiversity: 0, // TODO: Calculate when diversity is implemented
+    averageDiversity: diversityCount ? diversitySum / diversityCount : 0, // TODO: Calculate when diversity is implemented
     tasksWithFailures: taskReports
       .filter(t => t.averagePassRate < 1.0)
       .map(t => t.taskName),
@@ -200,11 +211,11 @@ async function evaluate(tasksDir: string, candidatesDir: string, outputDir: stri
   console.log(`  Mean pass@1: ${(globalReport.meanPassAt1 * 100).toFixed(1)}%`);
   
   // TODO: Generate reports when functions are implemented
-  console.log('\n⚠️  Note: Full reporting not yet implemented');
-  console.log('   Candidates should implement:');
-  console.log('   - computePassRate, computeDiversity in scoring.ts');
-  console.log('   - rankSnippets, selectWinner in ranking.ts');
-  console.log('   - generateJsonReport, generateMarkdownReport in report.ts');
+  // console.log('\n⚠️  Note: Full reporting not yet implemented');
+  // console.log('   Candidates should implement:');
+  // console.log('   - computePassRate, computeDiversity in scoring.ts');
+  // console.log('   - rankSnippets, selectWinner in ranking.ts');
+  // console.log('   - generateJsonReport, generateMarkdownReport in report.ts');
   
   // For now, save a simple results file
   const simpleResults = {
@@ -218,6 +229,12 @@ async function evaluate(tasksDir: string, candidatesDir: string, outputDir: stri
   );
   
   console.log(`\n✅ Results saved to ${outputDir}/results.json`);
+  // generate full reports
+  await generateJsonReport(taskReports, globalReport, path.join(outputDir, 'report.json'));
+  await generateMarkdownReport(taskReports, globalReport, path.join(outputDir, 'report.md'));
+  
+  console.log(`✅ Detailed reports saved to ${outputDir}/report.json and ${outputDir}/report.md`);
+
 }
 
 // CLI setup

@@ -7,6 +7,8 @@ export interface TestResult {
   passed: boolean;
   error?: string;
   executionTime: number;
+  output?: any; 
+  expected?: any; 
 }
 
 export interface SnippetResult {
@@ -75,18 +77,35 @@ export async function runSnippet(
         const out = fn(...args);
         const passed = JSON.stringify(out) === JSON.stringify(testCase.expected);
 
-        results.push({ passed, executionTime: Date.now() - startTime });
+        results.push({
+          passed,
+          executionTime: Date.now() - startTime,
+          output: out,
+          expected: testCase.expected
+        });
       } catch (err: any) {
         hadRuntimeError = true;
         errorMessage = err?.message ?? String(err);
-        results.push({ passed: false, error: errorMessage, executionTime: Date.now() - startTime });
+        results.push({
+        passed: false,
+        error: errorMessage,
+        executionTime: Date.now() - startTime,
+        output: undefined,
+        expected: testCase.expected
+      });
       }
     }
   } catch (err: any) {
     hadRuntimeError = true;
     errorMessage = err?.message ?? String(err);
-    for (const _ of testCases) {
-      results.push({ passed: false, error: errorMessage, executionTime: 0 });
+    for (let i = 0; i < testCases.length; i++) {
+      results.push({
+        passed: false,
+        error: errorMessage,
+        executionTime: 0,
+        output: undefined,
+        expected: testCases[i]?.expected
+      });
     }
   }
 
