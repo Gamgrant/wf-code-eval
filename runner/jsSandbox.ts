@@ -1,4 +1,5 @@
-import ivm from 'isolated-vm';
+// import ivm from 'isolated-vm';
+import vm from 'vm';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -31,73 +32,61 @@ export async function runSnippet(
   snippetPath: string,
   testCases: any[],
   functionName: string,
-  timeout: number = 1000
+  timeout: number = 4000
 ): Promise<SnippetResult> {
   const snippetId = path.basename(snippetPath, '.js');
   const results: TestResult[] = [];
   let hadRuntimeError = false;
   let errorMessage: string | undefined;
 
+  const buildArgs = (inp: any): any[] => {
+    if (Array.isArray(inp)) return inp;
+    if (inp !== null && typeof inp === 'object') return Object.values(inp);
+    return [inp];
+  };
+
   try {
     const code = await fs.readFile(snippetPath, 'utf-8');
-    
-    // Create a new isolate with memory limit
-    const isolate = new ivm.Isolate({ memoryLimit: 128 });
-    
+    const script = new vm.Script(code, { filename: snippetPath });
+
     for (const testCase of testCases) {
       const startTime = Date.now();
-      
       try {
-        // Create a new context for each test
-        const context = await isolate.createContext();
-        
-        // Compile and run the snippet code
-        const script = await isolate.compileScript(code);
-        await script.run(context);
-        
-        // Prepare the test execution code
-        const testCode = `
-          const result = ${functionName}(${JSON.stringify(testCase.input).slice(1, -1)});
-          JSON.stringify(result);
-        `;
-        
-        // Run the test with timeout
-        const testScript = await isolate.compileScript(testCode);
-        const resultJson = await testScript.run(context, { timeout });
-        const result = JSON.parse(resultJson);
-        
-        // Check if result matches expected
-        const passed = checkResult(result, testCase.expected, functionName);
-        
-        results.push({
-          passed,
-          executionTime: Date.now() - startTime
-        });
-      } catch (error: any) {
+        const sandbox: any = {
+          module: { exports: {} },
+          exports: {},
+          console,
+          setTimeout,
+          clearTimeout,
+        };
+        const context = vm.createContext(sandbox);
+        script.runInContext(context, { timeout });
+        let fn: any =
+          (context as any)[functionName] ??
+          (typeof sandbox.module?.exports === 'function'
+            ? sandbox.module.exports
+            : sandbox.module?.exports?.[functionName]);
+
+        if (typeof fn !== 'function') {
+          throw new Error(`Function not found: ${functionName}`);
+        }
+
+        const args = buildArgs(testCase.input);
+        const out = fn(...args);
+        const passed = JSON.stringify(out) === JSON.stringify(testCase.expected);
+
+        results.push({ passed, executionTime: Date.now() - startTime });
+      } catch (err: any) {
         hadRuntimeError = true;
-        errorMessage = error.message;
-        results.push({
-          passed: false,
-          error: error.message,
-          executionTime: Date.now() - startTime
-        });
+        errorMessage = err?.message ?? String(err);
+        results.push({ passed: false, error: errorMessage, executionTime: Date.now() - startTime });
       }
     }
-    
-    // Clean up isolate
-    isolate.dispose();
-  } catch (error: any) {
-    // File read error or compilation error
+  } catch (err: any) {
     hadRuntimeError = true;
-    errorMessage = error.message;
-    
-    // Mark all tests as failed
+    errorMessage = err?.message ?? String(err);
     for (const _ of testCases) {
-      results.push({
-        passed: false,
-        error: errorMessage,
-        executionTime: 0
-      });
+      results.push({ passed: false, error: errorMessage, executionTime: 0 });
     }
   }
 

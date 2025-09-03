@@ -68,3 +68,5 @@ Given several implementations of small coding problems (e.g., twoSum), build an 
 - Test incrementally - the CLI shows what's working/missing
 
 Time suggestion: 45min scoring, 45min ranking, 45min reporting, 45min testing/polish.
+step 1:
+Implements pass-rate evaluation using Node’s vm sandbox (instead of isolated-vm) for stability; adds argument mapping fixes and generates results/results.json after npm run eval.

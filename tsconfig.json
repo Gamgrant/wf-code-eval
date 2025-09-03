@@ -10,8 +10,8 @@
     "outDir": "./dist",
     "rootDir": "./",
     "resolveJsonModule": true,
-    "allowJs": true
+    "allowJs": true, 
   },
-  "include": ["src/**/*", "runner/**/*", "scripts/**/*"],
+  "include": ["src/**/*", "runner/**/*", "scripts/**/*", "tasks/**/*"],
   "exclude": ["node_modules", "dist"]
 }

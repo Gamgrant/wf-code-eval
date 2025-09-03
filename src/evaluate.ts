@@ -3,7 +3,8 @@
 import { Command } from 'commander';
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { runSnippet, SnippetResult } from '../runner/jsSandbox.js';
 import { computePassRate, computeDiversity, computeConsistency } from './scoring.js';
 import { rankSnippets, selectWinner } from './ranking.js';
@@ -27,7 +28,10 @@ async function loadTaskConfig(taskPath: string): Promise<TaskConfig> {
   const signaturePath = path.join(taskPath, 'signature.js');
   
   // Import test cases
-  const { testCases } = await import(testsPath);
+  const testsUrl = pathToFileURL(testsPath).href;
+  const { testCases } = await import(testsUrl);
+
+  // const { testCases } = await import(testsPath);
   
   // Extract function name from signature file
   const signatureCode = await fs.readFile(signaturePath, 'utf-8');
@@ -104,18 +108,40 @@ async function evaluate(tasksDir: string, candidatesDir: string, outputDir: stri
         console.log(`  Testing ${path.basename(candidatePath)}...`);
         
         const code = await fs.readFile(candidatePath, 'utf-8');
-        const result = await runSnippet(
-          candidatePath,
-          taskConfig.testCases,
-          taskConfig.functionName
-        );
-        
-        results.push(result);
-        codeSnippets.set(result.snippetId, code);
-        
-        console.log(`    ✓ Passed: ${result.totalPassed}/${result.totalTests} tests`);
+        try {
+          const result = await runSnippet(
+            candidatePath,
+            taskConfig.testCases,
+            taskConfig.functionName,
+            5000 
+          );
+
+          const rate = computePassRate(result);
+          const resultWithRate = { ...result, passRate: rate };
+
+          results.push(resultWithRate);
+          codeSnippets.set(resultWithRate.snippetId, code);
+
+          console.log(
+            `    ✓ Passed: ${resultWithRate.totalPassed}/${resultWithRate.totalTests} tests (${(rate * 100).toFixed(1)}%)`
+          );
+        } catch (err: any) {
+          const snippetId = path.basename(candidatePath);
+          console.error(`    ✗ ${snippetId} failed: ${err?.message ?? err}`);
+
+          results.push({
+            snippetId,
+            testResults: [],
+            totalPassed: 0,
+            totalTests: taskConfig.testCases.length,
+            passRate: 0,
+            hadRuntimeError: true,
+            errorMessage: String(err?.message ?? err),
+          } as SnippetResult);
+
+          codeSnippets.set(snippetId, code);
+        }
       }
-      
       // TODO: Call scoring functions here
       // const diversity = computeDiversity(Array.from(codeSnippets.values()));
       // const consistency = computeConsistency(results);

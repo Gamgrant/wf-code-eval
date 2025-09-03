@@ -21,4 +21,5 @@ const testCases = [
   }
 ];
 
-module.exports = { testCases };
+// module.exports = { testCases };
+export { testCases };

@@ -19,7 +19,19 @@ export interface ConsistencyMetrics {
  */
 export function computePassRate(result: SnippetResult): number {
   // TODO: Implement pass rate calculation
-  throw new Error('computePassRate not implemented');
+  const passed =
+    (result as any).totalPassed ??
+    (result as any).passed ??
+    0;
+    
+  const total = 
+    (result as any).totalTests ??
+    (result as any).total ??
+    (((result as any).passed ?? 0) + ((result as any).failed ?? 0));
+
+  if (!total || total <= 0) return 0;
+  return passed / total;
+  // throw new Error('computePassRate not implemented');
 }
 
 /**
